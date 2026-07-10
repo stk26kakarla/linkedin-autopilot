@@ -1,0 +1,72 @@
+# =============================================================================
+# Your content plan. Edit freely; no code changes needed.
+# The automation picks one (topic -> subtopic) pair per day and writes a post.
+# =============================================================================
+
+# How the day's pair is chosen:
+#   rotate : walk through every (topic, subtopic) pair in order, one per day,
+#            cycling back to the start when the list is exhausted (deterministic)
+#   random : pick a random pair each day
+selection_mode: rotate
+
+# -----------------------------------------------------------------------------
+# Voice and formatting. This is fed to the model when it writes the post.
+# Make it sound like you.
+# -----------------------------------------------------------------------------
+voice:
+  author_context: >
+    A hands-on software and data engineer who also runs a technology consultancy.
+    Writes with practical authority, no hype, no buzzword soup. Prefers concrete
+    detail and a clear point of view over generic observations.
+  audience: >
+    Engineers, technical founders, and data / IT decision makers on LinkedIn.
+  guidelines:
+    - Open with a specific hook, not "In today's fast-paced world".
+    - Lead with one clear insight tied to the researched news or trend.
+    - Keep it roughly 900 to 1400 characters; short paragraphs, 1 to 2 sentences each.
+    - First person, plain English. Explain any jargon in a half-sentence.
+    - End with a light, genuine question or takeaway, not a salesy CTA.
+    - Never invent statistics; only use figures found during research.
+  use_emojis: false          # set true if you want tasteful emojis
+  hashtag_count: 4           # number of hashtags to append
+
+# -----------------------------------------------------------------------------
+# Image direction (used to build the image prompt).
+# -----------------------------------------------------------------------------
+image:
+  style: >
+    Clean, modern, professional editorial illustration. Muted, confident colour
+    palette. Conceptual rather than literal. No text, no logos, no watermarks,
+    no charts with fake numbers. 1:1 square framing suitable for a LinkedIn feed.
+
+# -----------------------------------------------------------------------------
+# Your topics. Add / remove freely. Each topic has a list of subtopics.
+# -----------------------------------------------------------------------------
+topics:
+  - name: Data Engineering
+    subtopics:
+      - Databricks and dbt in production
+      - Orchestration with Airflow
+      - Data quality and contracts
+      - Lakehouse vs warehouse trade-offs
+
+  - name: Applied AI and Computer Vision
+    subtopics:
+      - Real-time video analytics on the edge
+      - Person tracking and re-identification
+      - Training data quality for CV models
+      - Running models on Apple Silicon (MPS)
+
+  - name: Cloud and Platform
+    subtopics:
+      - Cost control on AWS
+      - Infrastructure as code with Terraform
+      - CI/CD for data teams
+      - Microsoft Fabric and Power BI
+
+  - name: IT and Security Advisory
+    subtopics:
+      - Microsoft 365 hardening for SMBs
+      - Endpoint and identity security
+      - Practical zero-trust for small teams
+      - Backup and recovery basics

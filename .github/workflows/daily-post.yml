@@ -1,0 +1,118 @@
+name: Daily LinkedIn Post
+
+on:
+  schedule:
+    # GitHub cron is UTC and has no timezone. Two entries cover UK DST; the gate
+    # step below ensures only the 11:00 Europe/London run proceeds year-round.
+    - cron: "0 10 * * *"
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Override topic (optional)"
+        required: false
+      subtopic:
+        description: "Override subtopic (optional)"
+        required: false
+
+concurrency:
+  group: daily-linkedin-post
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: gate
+        name: Run only at 11:00 Europe/London
+        run: |
+          H=$(TZ=Europe/London date +%H)
+          echo "Europe/London hour is $H"
+          if [ "$H" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Not 11:00 local; skipping this run."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.gate.outputs.proceed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - if: steps.gate.outputs.proceed == 'true'
+        run: pip install -r requirements.txt
+
+      - name: Select topic
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          TOPIC_OVERRIDE: ${{ github.event.inputs.topic }}
+          SUBTOPIC_OVERRIDE: ${{ github.event.inputs.subtopic }}
+        run: python -m autopilot.select_topic --out out
+
+      - name: Research and draft
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+        run: python -m autopilot.research_and_draft --out out
+
+      - name: Generate image
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_IMAGE_MODEL: ${{ vars.GEMINI_IMAGE_MODEL }}
+        run: python -m autopilot.generate_image --out out
+
+      - name: Write review summary
+        if: steps.gate.outputs.proceed == 'true'
+        run: python -m autopilot.summary --out out >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Telegram preview (optional)
+        if: steps.gate.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m autopilot.notify --out out
+
+      - name: Upload bundle
+        if: steps.gate.outputs.proceed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-bundle
+          path: out/
+          retention-days: 7
+
+  publish:
+    needs: generate
+    if: needs.generate.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    # This environment must have a required reviewer (you). The job pauses here
+    # until you approve. Nothing is posted without that approval.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: post-bundle
+          path: out/
+      - name: Post to LinkedIn
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_REFRESH_TOKEN: ${{ secrets.LINKEDIN_REFRESH_TOKEN }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_API_VERSION: ${{ vars.LINKEDIN_API_VERSION }}
+        run: python -m autopilot.post_linkedin --out out

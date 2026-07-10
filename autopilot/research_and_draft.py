@@ -1,0 +1,122 @@
+"""Research the latest news/trends for the day's subtopic and draft the post.
+
+This is the single "intelligence" call: Claude runs server-side web searches,
+synthesises what is new, writes the post in your voice, and returns structured
+JSON (post text, image prompt, hashtags, sources).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+
+import anthropic
+
+from .common import out_dir, read_json, load_config, require_env, write_json
+
+# A newer dated web_search tool exists (e.g. web_search_20260318); this stable
+# version is broadly supported. Bump it if the docs recommend a newer one.
+WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search", "max_uses": 6}
+
+DEFAULT_MODEL = "claude-opus-4-8"
+
+
+def build_system(cfg: dict) -> str:
+    voice = cfg.get("voice", {})
+    image = cfg.get("image", {})
+    guidelines = "\n".join(f"- {g}" for g in voice.get("guidelines", []))
+    emojis = "You may use tasteful emojis." if voice.get("use_emojis") else "Do not use emojis."
+    n_tags = voice.get("hashtag_count", 4)
+    return f"""You research and write a single LinkedIn post.
+
+AUTHOR VOICE
+{voice.get('author_context', '').strip()}
+
+AUDIENCE
+{voice.get('audience', '').strip()}
+
+PROCESS
+1. Use web search to find genuinely RECENT news, releases, or trends (prefer the
+   last 30 days) for the given topic and subtopic. Run several searches. Prefer
+   primary sources (official blogs, release notes, docs, reputable reporting).
+2. Note 2 to 4 concrete developments worth mentioning, with what changed and why
+   it matters. Only use figures/claims you actually found; never invent numbers.
+3. Write ONE LinkedIn post in the author's voice.
+
+POST RULES
+{guidelines}
+- {emojis}
+- Append exactly {n_tags} relevant hashtags.
+
+IMAGE
+Also produce an image prompt for an accompanying illustration in this style:
+{image.get('style', '').strip()}
+
+OUTPUT
+Respond with ONLY a single JSON object, no markdown fences, no preamble:
+{{
+  "commentary": "the full post text including hashtags on their own final line",
+  "image_prompt": "a vivid prompt for the illustration, no text in the image",
+  "hashtags": ["#Example", "..."],
+  "sources": [{{"title": "...", "url": "..."}}]
+}}"""
+
+
+def extract_json(text: str) -> dict:
+    text = text.strip()
+    # Strip code fences if present.
+    fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # Fall back to the outermost brace pair.
+    start, end = text.find("{"), text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return json.loads(text[start : end + 1])
+    raise SystemExit("Model did not return parseable JSON. Raw output:\n" + text[:2000])
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default="out")
+    args = ap.parse_args()
+    d = out_dir(args.out)
+
+    cfg = load_config()
+    selection = read_json(d / "selection.json")
+    model = os.environ.get("CLAUDE_MODEL") or DEFAULT_MODEL
+
+    client = anthropic.Anthropic(api_key=require_env("ANTHROPIC_API_KEY"))
+    user_prompt = (
+        f"Topic: {selection['topic']}\n"
+        f"Subtopic: {selection['subtopic']}\n\n"
+        "Research the latest and write the post now."
+    )
+
+    resp = client.messages.create(
+        model=model,
+        max_tokens=2500,
+        system=build_system(cfg),
+        messages=[{"role": "user", "content": user_prompt}],
+        tools=[WEB_SEARCH_TOOL],
+    )
+
+    text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+    data = extract_json(text)
+
+    # Carry the selection forward and add a title for the image attachment.
+    data["topic"] = selection["topic"]
+    data["subtopic"] = selection["subtopic"]
+    data.setdefault("title", f"{selection['topic']}: {selection['subtopic']}")
+
+    write_json(d / "post.json", data)
+    print("Draft written. Preview:\n")
+    print(data["commentary"][:600])
+
+
+if __name__ == "__main__":
+    main()
