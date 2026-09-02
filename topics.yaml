@@ -1,12 +1,13 @@
 # =============================================================================
 # Your content plan. Edit freely; no code changes needed.
-# The automation picks one (topic -> subtopic) pair per day and writes a post.
+# The automation picks one (topic -> subtopic) pair per run and writes a post.
+# Runs Monday, Wednesday and Friday.
 # =============================================================================
 
-# How the day's pair is chosen:
-#   rotate : walk through every (topic, subtopic) pair in order, one per day,
-#            cycling back to the start when the list is exhausted (deterministic)
-#   random : pick a random pair each day
+# How each run's pair is chosen:
+#   rotate : step through the (topic, subtopic) pairs by date, cycling back to
+#            the start when the list is exhausted (deterministic)
+#   random : pick a random pair each run
 selection_mode: rotate
 
 # -----------------------------------------------------------------------------

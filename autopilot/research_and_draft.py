@@ -15,11 +15,15 @@ import anthropic
 
 from .common import out_dir, read_json, load_config, require_env, write_json
 
-# A newer dated web_search tool exists (e.g. web_search_20260318); this stable
+# A newer dated web_search tool exists (e.g. web_search_20260209); this stable
 # version is broadly supported. Bump it if the docs recommend a newer one.
-WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search", "max_uses": 6}
+#
+# max_uses is the main cost dial: every search drops its results into the
+# context, and the whole context is resent on each turn of the tool loop, so
+# the cost of an extra search compounds. Three is enough for one post.
+WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
 
-DEFAULT_MODEL = "claude-opus-4-8"
+DEFAULT_MODEL = "claude-sonnet-5"
 
 
 def build_system(cfg: dict) -> str:

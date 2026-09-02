@@ -1,4 +1,4 @@
-"""Pick the day's (topic, subtopic) pair and write out/selection.json."""
+"""Pick this run's (topic, subtopic) pair and write out/selection.json."""
 from __future__ import annotations
 
 import argparse
@@ -30,7 +30,9 @@ def choose(cfg: dict, pairs: list[dict]) -> dict:
     mode = cfg.get("selection_mode", "rotate")
     if mode == "random":
         return random.choice(pairs)
-    # rotate: advance by one pair each calendar day, cycling through the list.
+    # rotate: index by calendar date, cycling through the list. Runs are two or
+    # three days apart, so this steps by more than one pair at a time; it still
+    # covers every pair and stays deterministic for a given date.
     idx = dt.date.today().toordinal() % len(pairs)
     return pairs[idx]
 

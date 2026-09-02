@@ -1,9 +1,10 @@
-"""Generate the post image with the Gemini image API (Nano Banana Pro).
+"""Generate the post image with the Gemini image API (Nano Banana).
 
-Nano Banana Pro (gemini-3-pro-image) has no free tier: roughly $0.134/image
-at 1K/2K resolution, $0.24/image at 4K (per Google's published pricing as of
-Nov 2025). At one image/day that's a few dollars a month, on top of the
-Claude research/draft call.
+No Gemini image model has a free tier. This uses gemini-2.5-flash-image at
+about $0.039/image rather than gemini-3-pro-image at $0.134: the Pro model's
+advantages are 4K output and text rendering, and the image style in
+topics.yaml asks for neither (it explicitly forbids text in the image).
+Override with GEMINI_IMAGE_MODEL if you want the Pro model back.
 """
 from __future__ import annotations
 
@@ -15,9 +16,9 @@ from google.genai import types
 
 from .common import out_dir, read_json, require_env
 
-DEFAULT_MODEL = "gemini-3-pro-image"
+DEFAULT_MODEL = "gemini-2.5-flash-image"
 DEFAULT_ASPECT_RATIO = "1:1"
-DEFAULT_IMAGE_SIZE = "2K"
+DEFAULT_IMAGE_SIZE = "1K"
 
 
 def main() -> None:
