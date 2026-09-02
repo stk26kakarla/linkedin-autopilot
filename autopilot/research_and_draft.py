@@ -54,13 +54,29 @@ Also produce an image prompt for an accompanying illustration in this style:
 {image.get('style', '').strip()}
 
 OUTPUT
-Respond with ONLY a single JSON object, no markdown fences, no preamble:
+Respond with ONLY a single JSON object, no markdown fences, no preamble.
+The "commentary" must be plain text ready to paste into LinkedIn: no markup of
+any kind, no <cite> tags, no citation markers, no reference numbers. Put the
+sources in the "sources" field instead.
 {{
   "commentary": "the full post text including hashtags on their own final line",
   "image_prompt": "a vivid prompt for the illustration, no text in the image",
   "hashtags": ["#Example", "..."],
   "sources": [{{"title": "...", "url": "..."}}]
 }}"""
+
+# Claude's server-side web search wraps quoted material in <cite index="...">
+# tags. They must never reach LinkedIn, which would render them literally.
+CITE_TAG = re.compile(r"</?cite\b[^>]*>", re.IGNORECASE)
+
+
+def strip_markup(text: str) -> str:
+    """Remove citation tags and tidy the whitespace they leave behind."""
+    text = CITE_TAG.sub("", text)
+    # Collapse spaces left mid-sentence, but keep paragraph breaks intact.
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    return text.strip()
 
 
 def extract_json(text: str) -> dict:
@@ -107,6 +123,7 @@ def main() -> None:
 
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
     data = extract_json(text)
+    data["commentary"] = strip_markup(data["commentary"])
 
     # Carry the selection forward and add a title for the image attachment.
     data["topic"] = selection["topic"]
@@ -114,7 +131,7 @@ def main() -> None:
     data.setdefault("title", f"{selection['topic']}: {selection['subtopic']}")
 
     write_json(d / "post.json", data)
-    print("Draft written. Preview:\n")
+    print(f"Draft written ({len(data['commentary'])} chars). Preview:\n")
     print(data["commentary"][:600])
 
 
