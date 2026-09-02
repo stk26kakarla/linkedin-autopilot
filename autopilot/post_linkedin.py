@@ -10,6 +10,7 @@ scripts/get_linkedin_token.py.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import os
 
 import requests
@@ -18,8 +19,10 @@ from .common import out_dir, read_json
 
 API = "https://api.linkedin.com"
 OAUTH = "https://www.linkedin.com/oauth/v2/accessToken"
-# LinkedIn versions its API monthly (YYYYMM). Bump this if you get a version error.
-DEFAULT_VERSION = "202506"
+# LinkedIn versions its API monthly (YYYYMM) and retires versions on a rolling
+# ~12-month window. resolve_version() falls back automatically when this ages
+# out, so an unattended run does not break the day it expires.
+DEFAULT_VERSION = "202608"
 
 # Characters LinkedIn's "commentary" format treats as reserved and that must be
 # escaped with a backslash. '#' is intentionally excluded so hashtags render.
@@ -56,6 +59,36 @@ def headers(token: str, version: str) -> dict:
         "X-Restli-Protocol-Version": "2.0.0",
         "Content-Type": "application/json",
     }
+
+
+def resolve_version(token: str, preferred: str) -> str:
+    """Return a LinkedIn API version the server still accepts.
+
+    A 426 means the version has been retired; any other status means the
+    version itself is fine (a 403 here just reflects the scopes this token
+    has). Try the preferred version, then walk back month by month.
+    """
+    candidates, seen = [preferred], set()
+    year, month = dt.date.today().year, dt.date.today().month
+    for _ in range(15):
+        candidates.append(f"{year}{month:02d}")
+        month -= 1
+        if month == 0:
+            year, month = year - 1, 12
+
+    for version in candidates:
+        if version in seen:
+            continue
+        seen.add(version)
+        r = requests.get(f"{API}/rest/me", headers=headers(token, version), timeout=20)
+        if r.status_code != 426:
+            if version != preferred:
+                print(f"LinkedIn version {preferred} is retired; using {version}.")
+            return version
+    raise SystemExit(
+        f"No supported LinkedIn-Version found (tried {len(seen)}). "
+        "Check https://learn.microsoft.com/linkedin/marketing/versioning"
+    )
 
 
 def member_urn(token: str) -> str:
@@ -122,9 +155,9 @@ def main() -> None:
     d = out_dir(args.out)
 
     post = read_json(d / "post.json")
-    version = os.environ.get("LINKEDIN_API_VERSION") or DEFAULT_VERSION
 
     token = get_access_token()
+    version = resolve_version(token, os.environ.get("LINKEDIN_API_VERSION") or DEFAULT_VERSION)
     author = member_urn(token)
     image_urn = upload_image(token, version, author, d / "image.png")
     urn = create_post(
