@@ -78,6 +78,11 @@ POST RULES
 - Append exactly {n_tags} relevant hashtags.
 - HARD LIMIT: the post must be at most {limit} characters, hashtags included.
   Count before you answer and cut until it fits. Going over is a failed post.
+- NEVER use an em dash or en dash. Not the character themselves, not as a
+  parenthetical, not for emphasis, not anywhere in the post. They are the
+  clearest giveaway of machine-written text and this post must not read that
+  way. Use a comma, a full stop, a colon, or brackets instead. If you find
+  yourself reaching for a dash, the sentence usually wants to be two sentences.
 
 IMAGE
 Also produce an image prompt for an accompanying illustration in this style:
@@ -100,9 +105,22 @@ sources in the "sources" field instead.
 CITE_TAG = re.compile(r"</?cite\b[^>]*>", re.IGNORECASE)
 
 
+# The em dash is the clearest signal of machine-written text, which is a bad
+# look for a feed whose point is cutting through AI hype. It is also never
+# required, since a comma, a full stop or a hyphen always works, so it is
+# removed outright rather than asked for politely: prompt instructions alone
+# did not hold for the character limit or for emojis.
+EM_DASH = re.compile(r"\s*[—―]\s*")
+# An en dash between numbers ("1300–1500") is correct typography and stays.
+# One used as a sentence break is the same tell as an em dash and goes.
+SPACED_EN_DASH = re.compile(r"(?<=\s)–(?=\s)")
+
+
 def strip_markup(text: str) -> str:
-    """Remove citation tags and tidy the whitespace they leave behind."""
+    """Remove citation tags and dashes that read as machine-written."""
     text = CITE_TAG.sub("", text)
+    text = EM_DASH.sub(" - ", text)
+    text = SPACED_EN_DASH.sub("-", text)
     # Collapse spaces left mid-sentence, but keep paragraph breaks intact.
     text = re.sub(r"[ \t]{2,}", " ", text)
     text = re.sub(r"[ \t]+\n", "\n", text)
@@ -163,7 +181,9 @@ def main() -> None:
             f"usage={resp.usage}. If stop_reason is max_tokens, raise max_tokens."
         )
     data = extract_json(text)
-    data["commentary"] = strip_markup(data["commentary"])
+    raw_commentary = data["commentary"]
+    data["commentary"] = strip_markup(raw_commentary)
+    dashes = len(EM_DASH.findall(raw_commentary)) + len(SPACED_EN_DASH.findall(raw_commentary))
 
     # Carry the selection forward and add a title for the image attachment.
     data["topic"] = selection["topic"]
@@ -177,6 +197,10 @@ def main() -> None:
         # Not fatal: the post is still worth reviewing, and a rerun costs another
         # billed call. Surface it so it can be rejected or trimmed on approval.
         print(f"::warning::Post is {length - limit} characters over the {limit} limit.")
+    if dashes:
+        # Already removed, so nothing reaches LinkedIn. Reported so a model that
+        # keeps ignoring the rule is visible rather than silently patched over.
+        print(f"::warning::Removed {dashes} em/en dash(es); the model ignored the rule.")
     print(data["commentary"][:600])
 
 
