@@ -36,7 +36,16 @@ def build_system(cfg: dict) -> str:
     voice = cfg.get("voice", {})
     image = cfg.get("image", {})
     guidelines = "\n".join(f"- {g}" for g in voice.get("guidelines", []))
-    emojis = "You may use tasteful emojis." if voice.get("use_emojis") else "Do not use emojis."
+    # "You may" left the choice to the model, which made use_emojis look like a
+    # setting while behaving like a suggestion - it produced none. Both branches
+    # are now instructions.
+    emojis = (
+        "Use 3 to 5 tasteful emojis. Place them where they help someone skimming "
+        "- leading a short line or marking a point - never two in a row, never "
+        "mid-sentence as decoration, and none on the hashtag line."
+        if voice.get("use_emojis")
+        else "Do not use emojis."
+    )
     n_tags = voice.get("hashtag_count", 4)
     limit = max_chars(cfg)
     return f"""You research and write a single LinkedIn post.

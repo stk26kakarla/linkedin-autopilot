@@ -53,7 +53,11 @@ voice:
     - First person, plain English. Explain any jargon in a half-sentence.
     - End with a light, genuine question or takeaway, not a salesy CTA.
     - Never invent statistics; only use figures found during research.
-  max_chars: 1200            # hard ceiling on the post, hashtags included
+  # LinkedIn's own cap is 3000. The commonly cited engagement sweet spot starts
+  # around 1300 - the sources for that are marketing blogs rather than research,
+  # but the dwell-time argument holds and 1500 leaves room to explain a mechanism
+  # and still land an action.
+  max_chars: 1500            # hard ceiling on the post, hashtags included
   use_emojis: true           # tasteful emojis allowed
   hashtag_count: 7           # number of hashtags to append
 
@@ -80,7 +84,7 @@ topics:
   - name: Automation and LLMs
     subtopics:
       - Whether AI speed gains actually translate into cost savings
-      - Which workflows are genuinely worth automating
+      - Spotting automation candidates and judging feasibility against payoff
       - Hallucination and the limits of prompt engineering
       - Image and video generation in production workflows
 
