@@ -140,7 +140,10 @@ def create_post(token: str, version: str, author: str, commentary: str, title: s
         },
         "content": {"media": {"title": title[:400], "id": image_urn}},
         "lifecycleState": "PUBLISHED",
-        "isReuseDisabledByAuthor": False,
+        # Renamed from isReuseDisabledByAuthor, which newer versions reject
+        # outright (422). False keeps resharing enabled, which is the point of
+        # posting; do not drop the field and rely on the API default.
+        "isReshareDisabledByAuthor": False,
     }
     r = requests.post(f"{API}/rest/posts", headers=headers(token, version), json=body, timeout=30)
     if r.status_code >= 300:
