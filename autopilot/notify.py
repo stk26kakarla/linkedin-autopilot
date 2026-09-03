@@ -57,6 +57,10 @@ def main() -> None:
     run = run_url()
     if run:
         body += f"\n\nApprove or ignore: {run}"
+    # A token about to expire is only useful if it reaches the phone, not a log.
+    warning = d / "token_warning.txt"
+    if warning.exists():
+        body += f"\n\n{warning.read_text(encoding='utf-8')}"
     for chunk in [body[i : i + 4096] for i in range(0, len(body), 4096)] or [""]:
         r = requests.post(
             f"{base}/sendMessage",

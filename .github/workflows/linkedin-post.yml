@@ -77,6 +77,17 @@ jobs:
         if: steps.gate.outputs.proceed == 'true'
         run: python -m autopilot.summary --out out >> "$GITHUB_STEP_SUMMARY"
 
+      # Runs here rather than in publish so the warning reaches Telegram with
+      # the draft, while there is still time to re-mint before a run fails.
+      - name: Check LinkedIn token expiry
+        if: steps.gate.outputs.proceed == 'true'
+        continue-on-error: true
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+        run: python -m autopilot.check_token --out out
+
       - name: Telegram preview (optional)
         if: steps.gate.outputs.proceed == 'true'
         continue-on-error: true
