@@ -11,17 +11,19 @@
 selection_mode: rotate
 
 # -----------------------------------------------------------------------------
-# What every post is for. This shapes the angle, not just the wording: it is the
-# difference between reporting a development and explaining what people have
-# wrong about it. Applies to every topic below.
+# What every post is for. This shapes the angle, not just the wording. Applies to
+# every topic below. Note it allows three kinds of post: correcting a myth is one
+# option, not the required frame for all of them.
 # -----------------------------------------------------------------------------
 mission: >
-  Cut through social media hype and received wisdom. Separate what has genuinely
-  changed from what is being oversold, and leave the reader knowing something
-  they can act on. Two audiences at once: businesses deciding where to invest,
-  and data and software engineers deciding how to do the work. A post that
-  corrects a widely held misconception, or shows a better way to do a familiar
-  job, is worth more than one that simply reports news.
+  Educate, do not broadcast. Depending on what the research turns up, a post can
+  correct a myth, report something genuinely new, or simply teach a better way to
+  do a familiar job. Pick whichever the evidence actually supports: where social
+  media hype or received wisdom is wrong, say so; where it is right, or where the
+  honest answer is just "here is a useful thing that changed", say that instead.
+  Two audiences at once: businesses deciding where to invest, and data and
+  software engineers deciding how to do the work. Every post should leave the
+  reader knowing something they can act on.
 
 # -----------------------------------------------------------------------------
 # Voice and formatting. This is fed to the model when it writes the post.
@@ -40,16 +42,19 @@ voice:
   guidelines:
     - Open with a specific hook, not "In today's fast-paced world".
     - Lead with one clear insight tied to the researched news or trend.
-    - Where the popular narrative is wrong, oversold, or oversimplified, say so
-      plainly and explain what is actually true.
+    - Where the popular narrative is genuinely wrong, oversold, or oversimplified,
+      say so plainly and explain what is actually true. Only when that is really
+      the case; do not reach for a contrarian angle when the hyped thing is real
+      or the honest post is just "this changed, here is why it matters".
     - Give the reader something they can act on, not just something interesting.
-    - Be equally willing to say a much-hyped thing is real and a much-hyped thing
-      is not; scepticism is a method here, not a pose.
-    - Keep it roughly 900 to 1400 characters; short paragraphs, 1 to 2 sentences each.
+    - Treat the character limit as a limit, not a target. Cut supporting examples
+      and caveats before cutting the main point.
+    - Short paragraphs, 1 to 2 sentences each.
     - First person, plain English. Explain any jargon in a half-sentence.
     - End with a light, genuine question or takeaway, not a salesy CTA.
     - Never invent statistics; only use figures found during research.
-  use_emojis: true          # set true if you want tasteful emojis
+  max_chars: 1200            # hard ceiling on the post, hashtags included
+  use_emojis: true           # tasteful emojis allowed
   hashtag_count: 7           # number of hashtags to append
 
 # -----------------------------------------------------------------------------

@@ -25,6 +25,12 @@ WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search", "max_use
 
 DEFAULT_MODEL = "claude-sonnet-5"
 
+DEFAULT_MAX_CHARS = 1200
+
+
+def max_chars(cfg: dict) -> int:
+    return int(cfg.get("voice", {}).get("max_chars") or DEFAULT_MAX_CHARS)
+
 
 def build_system(cfg: dict) -> str:
     voice = cfg.get("voice", {})
@@ -32,6 +38,7 @@ def build_system(cfg: dict) -> str:
     guidelines = "\n".join(f"- {g}" for g in voice.get("guidelines", []))
     emojis = "You may use tasteful emojis." if voice.get("use_emojis") else "Do not use emojis."
     n_tags = voice.get("hashtag_count", 4)
+    limit = max_chars(cfg)
     return f"""You research and write a single LinkedIn post.
 
 WHAT THIS POST IS FOR
@@ -49,16 +56,19 @@ PROCESS
    primary sources (official blogs, release notes, docs, reputable reporting).
 2. Note 2 to 4 concrete developments worth mentioning, with what changed and why
    it matters. Only use figures/claims you actually found; never invent numbers.
-3. Ask what a well-informed reader would probably believe about this subject, and
-   whether the evidence you found actually supports it. Where it does not, that
-   gap is the post. Where it does, say so plainly rather than manufacturing a
-   contrarian angle.
+3. Choose the honest angle. Ask what a well-informed reader would probably
+   believe about this subject and whether the evidence supports it. If there is a
+   real gap, that gap is the post. If there is not, do not manufacture one:
+   report what genuinely changed, or explain a better way to do the job. All
+   three are good posts; a forced contrarian take is not.
 4. Write ONE LinkedIn post in the author's voice.
 
 POST RULES
 {guidelines}
 - {emojis}
 - Append exactly {n_tags} relevant hashtags.
+- HARD LIMIT: the post must be at most {limit} characters, hashtags included.
+  Count before you answer and cut until it fits. Going over is a failed post.
 
 IMAGE
 Also produce an image prompt for an accompanying illustration in this style:
@@ -70,7 +80,7 @@ The "commentary" must be plain text ready to paste into LinkedIn: no markup of
 any kind, no <cite> tags, no citation markers, no reference numbers. Put the
 sources in the "sources" field instead.
 {{
-  "commentary": "the full post text including hashtags on their own final line",
+  "commentary": "the full post text including hashtags on their own final line, at most {limit} characters",
   "image_prompt": "a vivid prompt for the illustration, no text in the image",
   "hashtags": ["#Example", "..."],
   "sources": [{{"title": "...", "url": "..."}}]
@@ -141,8 +151,13 @@ def main() -> None:
     data["subtopic"] = selection["subtopic"]
     data.setdefault("title", f"{selection['topic']}: {selection['subtopic']}")
 
+    length, limit = len(data["commentary"]), max_chars(cfg)
     write_json(d / "post.json", data)
-    print(f"Draft written ({len(data['commentary'])} chars). Preview:\n")
+    print(f"Draft written ({length} chars, limit {limit}). Preview:\n")
+    if length > limit:
+        # Not fatal: the post is still worth reviewing, and a rerun costs another
+        # billed call. Surface it so it can be rejected or trimmed on approval.
+        print(f"::warning::Post is {length - limit} characters over the {limit} limit.")
     print(data["commentary"][:600])
 
 

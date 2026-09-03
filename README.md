@@ -115,7 +115,8 @@ it reads well.
 ## Customising
 
 - Edit `topics.yaml` to change the mission, topics, subtopics, voice, guidelines, hashtags, and image style. No code changes needed.
-- `mission` is the editorial brief - cut through hype, correct what people have wrong, leave the reader something actionable. It shapes the angle of every post, so it is the first thing to change if the output feels like it is just reporting news.
+- `mission` is the editorial brief. It allows three kinds of post - correcting a myth, reporting something genuinely new, or teaching a better way to do a familiar job - and tells the model to pick whichever the evidence supports rather than forcing a contrarian angle. Change this first if the posts feel like the wrong sort of thing.
+- `voice.max_chars` (default 1200) is a hard ceiling, enforced in the prompt and checked after generation; going over logs a workflow warning rather than failing the run, since a rerun costs another billed call.
 - Subtopics work best as **subjects with something recent to find** ("Cost control on AWS"), not conclusions to defend ("AI doesn't save money") or evergreen how-tos. The model is told to research the last 30 days, so a subtopic with no recent coverage produces a vague post.
 - `selection_mode: rotate` steps through the list by date; `random` picks at random.
 - To change how often it posts, edit the two `cron` entries in `.github/workflows/linkedin-post.yml` (currently `1,3,5` = Mon/Wed/Fri).
