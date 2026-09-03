@@ -34,6 +34,9 @@ def build_system(cfg: dict) -> str:
     n_tags = voice.get("hashtag_count", 4)
     return f"""You research and write a single LinkedIn post.
 
+WHAT THIS POST IS FOR
+{cfg.get('mission', '').strip()}
+
 AUTHOR VOICE
 {voice.get('author_context', '').strip()}
 
@@ -46,7 +49,11 @@ PROCESS
    primary sources (official blogs, release notes, docs, reputable reporting).
 2. Note 2 to 4 concrete developments worth mentioning, with what changed and why
    it matters. Only use figures/claims you actually found; never invent numbers.
-3. Write ONE LinkedIn post in the author's voice.
+3. Ask what a well-informed reader would probably believe about this subject, and
+   whether the evidence you found actually supports it. Where it does not, that
+   gap is the post. Where it does, say so plainly rather than manufacturing a
+   contrarian angle.
+4. Write ONE LinkedIn post in the author's voice.
 
 POST RULES
 {guidelines}

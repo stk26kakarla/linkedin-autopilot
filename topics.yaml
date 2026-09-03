@@ -11,6 +11,19 @@
 selection_mode: rotate
 
 # -----------------------------------------------------------------------------
+# What every post is for. This shapes the angle, not just the wording: it is the
+# difference between reporting a development and explaining what people have
+# wrong about it. Applies to every topic below.
+# -----------------------------------------------------------------------------
+mission: >
+  Cut through social media hype and received wisdom. Separate what has genuinely
+  changed from what is being oversold, and leave the reader knowing something
+  they can act on. Two audiences at once: businesses deciding where to invest,
+  and data and software engineers deciding how to do the work. A post that
+  corrects a widely held misconception, or shows a better way to do a familiar
+  job, is worth more than one that simply reports news.
+
+# -----------------------------------------------------------------------------
 # Voice and formatting. This is fed to the model when it writes the post.
 # Make it sound like you.
 # -----------------------------------------------------------------------------
@@ -20,10 +33,18 @@ voice:
     Writes with practical authority, no hype, no buzzword soup. Prefers concrete
     detail and a clear point of view over generic observations.
   audience: >
-    Engineers, technical founders, and data / IT decision makers on LinkedIn.
+    Two groups at once, and the post should work for both: data and software
+    engineers who want a better way to do the work, and business, technical
+    founder, and data / IT decision makers weighing where to spend. Assume the
+    engineers know their craft and the decision makers do not want jargon.
   guidelines:
     - Open with a specific hook, not "In today's fast-paced world".
     - Lead with one clear insight tied to the researched news or trend.
+    - Where the popular narrative is wrong, oversold, or oversimplified, say so
+      plainly and explain what is actually true.
+    - Give the reader something they can act on, not just something interesting.
+    - Be equally willing to say a much-hyped thing is real and a much-hyped thing
+      is not; scepticism is a method here, not a pose.
     - Keep it roughly 900 to 1400 characters; short paragraphs, 1 to 2 sentences each.
     - First person, plain English. Explain any jargon in a half-sentence.
     - End with a light, genuine question or takeaway, not a salesy CTA.
@@ -51,12 +72,12 @@ topics:
       - Data quality and contracts
       - Lakehouse vs warehouse trade-offs
 
-  - name: Applied AI and Computer Vision
+  - name: Automation and LLMs
     subtopics:
-      - Real-time video analytics on the edge
-      - Person tracking and re-identification
-      - Training data quality for CV models
-      - Running models on Apple Silicon (MPS)
+      - Whether AI speed gains actually translate into cost savings
+      - Which workflows are genuinely worth automating
+      - Hallucination and the limits of prompt engineering
+      - Image and video generation in production workflows
 
   - name: Cloud and Platform
     subtopics:

@@ -114,7 +114,9 @@ it reads well.
 
 ## Customising
 
-- Edit `topics.yaml` to change topics, subtopics, voice, guidelines, hashtags, and image style. No code changes needed.
+- Edit `topics.yaml` to change the mission, topics, subtopics, voice, guidelines, hashtags, and image style. No code changes needed.
+- `mission` is the editorial brief - cut through hype, correct what people have wrong, leave the reader something actionable. It shapes the angle of every post, so it is the first thing to change if the output feels like it is just reporting news.
+- Subtopics work best as **subjects with something recent to find** ("Cost control on AWS"), not conclusions to defend ("AI doesn't save money") or evergreen how-tos. The model is told to research the last 30 days, so a subtopic with no recent coverage produces a vague post.
 - `selection_mode: rotate` steps through the list by date; `random` picks at random.
 - To change how often it posts, edit the two `cron` entries in `.github/workflows/linkedin-post.yml` (currently `1,3,5` = Mon/Wed/Fri).
 - `CLAUDE_MODEL` and `GEMINI_IMAGE_MODEL` repo Variables override the model defaults without touching code.
