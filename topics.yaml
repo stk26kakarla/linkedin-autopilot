@@ -49,8 +49,8 @@ voice:
     - First person, plain English. Explain any jargon in a half-sentence.
     - End with a light, genuine question or takeaway, not a salesy CTA.
     - Never invent statistics; only use figures found during research.
-  use_emojis: false          # set true if you want tasteful emojis
-  hashtag_count: 4           # number of hashtags to append
+  use_emojis: true          # set true if you want tasteful emojis
+  hashtag_count: 7           # number of hashtags to append
 
 # -----------------------------------------------------------------------------
 # Image direction (used to build the image prompt).
