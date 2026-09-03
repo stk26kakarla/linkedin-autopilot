@@ -134,15 +134,25 @@ def main() -> None:
         "Research the latest and write the post now."
     )
 
+    # Headroom matters more than it looks: Sonnet 5 thinks by default, and a
+    # thinking pass of ~1300 tokens plus the JSON left nothing under the old
+    # 2500 ceiling - the model was truncated before it emitted any text. Only
+    # tokens actually generated are billed, so a high ceiling is free insurance.
     resp = client.messages.create(
         model=model,
-        max_tokens=2500,
+        max_tokens=8000,
         system=build_system(cfg),
         messages=[{"role": "user", "content": user_prompt}],
         tools=[WEB_SEARCH_TOOL],
     )
 
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
+    if not text.strip():
+        raise SystemExit(
+            "Model returned no text block. "
+            f"stop_reason={resp.stop_reason}, blocks={[b.type for b in resp.content]}, "
+            f"usage={resp.usage}. If stop_reason is max_tokens, raise max_tokens."
+        )
     data = extract_json(text)
     data["commentary"] = strip_markup(data["commentary"])
 
