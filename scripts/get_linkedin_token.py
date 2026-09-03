@@ -16,7 +16,10 @@ token, if your app is granted one). Store them as repo secrets.
 """
 from __future__ import annotations
 
+import datetime as dt
 import os
+import shutil
+import subprocess
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -27,8 +30,25 @@ CLIENT_ID = os.environ["LINKEDIN_CLIENT_ID"]
 CLIENT_SECRET = os.environ["LINKEDIN_CLIENT_SECRET"]
 REDIRECT = "http://localhost:8000/callback"
 SCOPES = "openid profile email w_member_social"
+# Set GITHUB_REPO to target a repo other than the current directory's.
+REPO_ENV = os.environ.get("GITHUB_REPO")
 
 _code = {}
+
+
+def push_secret(token: str) -> bool:
+    """Set LINKEDIN_ACCESS_TOKEN via the gh CLI. False if that is not possible."""
+    if not token or not shutil.which("gh"):
+        return False
+    cmd = ["gh", "secret", "set", "LINKEDIN_ACCESS_TOKEN", "--body", token]
+    if REPO_ENV:
+        cmd += ["--repo", REPO_ENV]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Could not set the secret automatically: {e.stderr.strip()}")
+        return False
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -80,16 +100,28 @@ def main() -> None:
     token_resp.raise_for_status()
     data = token_resp.json()
 
-    print("\n=========== STORE THESE AS GITHUB SECRETS ===========")
-    print("LINKEDIN_ACCESS_TOKEN =", data.get("access_token"))
-    if data.get("refresh_token"):
-        print("LINKEDIN_REFRESH_TOKEN =", data["refresh_token"])
-        print("(refresh token present: prefer this; access tokens expire in ~60 days)")
+    access_token = data.get("access_token")
+    expires = dt.datetime.now() + dt.timedelta(seconds=int(data.get("expires_in", 0)))
+
+    # Push straight to GitHub rather than making you copy a 500-character token
+    # by hand. The browser consent above cannot be automated - that is the whole
+    # point of the flow - but everything after it can.
+    if push_secret(access_token):
+        print(f"\nLINKEDIN_ACCESS_TOKEN updated on {REPO_ENV or 'the current repo'}.")
+        print(f"Valid until {expires:%d %b %Y}. Re-run this before then.")
     else:
-        print("LINKEDIN_REFRESH_TOKEN = (none returned)")
-        print("Your app was not granted refresh tokens. Use LINKEDIN_ACCESS_TOKEN and")
-        print("re-run this script every ~55 days to mint a new one.")
-    print("=====================================================")
+        print("\n=========== STORE THIS AS A GITHUB SECRET ===========")
+        print("LINKEDIN_ACCESS_TOKEN =", access_token)
+        print(f"(valid until {expires:%d %b %Y})")
+        print("=====================================================")
+
+    if data.get("refresh_token"):
+        # Would end the 60-day cycle, but needs Marketing Developer Platform
+        # partner approval; self-serve apps do not get one.
+        print("\nA refresh token was returned - unusual for a self-serve app.")
+        print("LINKEDIN_REFRESH_TOKEN =", data["refresh_token"])
+        print("Set it as a secret; post_linkedin.py prefers it and mints access")
+        print("tokens automatically, which ends the manual re-minting.")
 
 
 if __name__ == "__main__":

@@ -57,7 +57,9 @@ export LINKEDIN_CLIENT_SECRET=xxxx
 python scripts/get_linkedin_token.py
 ```
 
-Approve in the browser. The script prints your token(s). If it prints a `LINKEDIN_REFRESH_TOKEN`, use that (access tokens are auto-minted each run and last ~60 days; refresh tokens last ~365 days). If no refresh token is returned, use the `LINKEDIN_ACCESS_TOKEN` and re-run this script every ~55 days.
+Approve in the browser. If the `gh` CLI is installed and authenticated, the script sets the `LINKEDIN_ACCESS_TOKEN` secret itself and tells you the expiry date; otherwise it prints the token for you to paste in. Use `GITHUB_REPO=owner/name` to target a specific repo.
+
+**This has to be repeated every ~55 days.** Refresh tokens, which would end that, are only issued to approved Marketing Developer Platform partners, and the self-serve products this uses do not qualify. The browser consent cannot be automated either - that step is LinkedIn confirming a member authorised the app - so the workflow warns you instead: within 14 days of expiry, every run appends a notice to the Telegram preview.
 
 ## 3. Push the repo
 
