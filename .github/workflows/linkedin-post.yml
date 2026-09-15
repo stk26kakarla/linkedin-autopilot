@@ -32,15 +32,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Decides which of the two DST crons is "the" run for today. It checks
+      # WHICH cron fired, not what time it is now: GitHub routinely starts
+      # scheduled runs hours late, and an earlier version of this gate compared
+      # the wall clock to 11:00 and so skipped every single scheduled run.
       - id: gate
-        name: Run only at 11:00 Europe/London
+        name: Run once per scheduled day
+        env:
+          TRIGGERING_CRON: ${{ github.event.schedule }}
         run: |
-          H=$(TZ=Europe/London date +%H)
-          echo "Europe/London hour is $H"
-          if [ "$H" = "11" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual run; proceeding."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # +0100 during British Summer Time, +0000 in winter. Whichever cron
+          # lands on 11:00 London today is the one allowed through.
+          OFFSET=$(TZ=Europe/London date +%z)
+          if [ "$OFFSET" = "+0100" ]; then
+            WANT="0 10 * * 1,3,5"
+          else
+            WANT="0 11 * * 1,3,5"
+          fi
+          echo "London offset $OFFSET, want '$WANT', fired '$TRIGGERING_CRON'"
+          if [ "$TRIGGERING_CRON" = "$WANT" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Not 11:00 local; skipping this run."
+            echo "This is the other DST cron; skipping so the day runs once."
             echo "proceed=false" >> "$GITHUB_OUTPUT"
           fi
 
